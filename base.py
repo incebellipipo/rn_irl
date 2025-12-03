@@ -23,6 +23,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from sqlalchemy import create_engine, desc, func, Column, Integer, Text
 from sqlalchemy import update, ForeignKey
+from sqlalchemy import text
 from sqlalchemy.orm import declarative_base, sessionmaker, mapped_column
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 from sqlalchemy.orm import relationship
@@ -494,6 +495,36 @@ class SystemSettings(Base):
         engine.dispose()
 
 
+def ensure_schema_migrations():
+    """
+    Ensure SQLite schema includes columns expected by ORM.
+    Adds missing columns with safe defaults to avoid runtime errors.
+    Uses SQLAlchemy engine bound to the app's configured DB URL to avoid
+    filesystem path resolution issues inside containers.
+    """
+    db_url = st.secrets.db_details.db_path
+    if not db_url.startswith('sqlite'):
+        return
+
+    engine = None
+    try:
+        engine = create_engine(db_url)
+        with engine.begin() as conn:
+            cols = conn.execute(text('PRAGMA table_info("System Settings")')).fetchall()
+            colnames = [row[1] for row in cols]
+            if 'forward_ass_comments' not in colnames:
+                conn.execute(text('ALTER TABLE "System Settings" ADD COLUMN forward_ass_comments INTEGER DEFAULT 0'))
+    except Exception:
+        # Best-effort migration; ignore if ALTER fails (e.g., permissions)
+        pass
+    finally:
+        if engine is not None:
+            try:
+                engine.dispose()
+            except Exception:
+                pass
+
+
 class Organisation(Base):
 
     __tablename__ = 'Organisations'
@@ -780,7 +811,7 @@ def delete_assessments(irl_asses):
 
     for irl_ass in irl_asses:
 
-        irl_ass_ids.append(irl_ass.id)        
+        irl_ass_ids.append(irl_ass.id)
         aps = session.query(ActionPoint).filter(
             ActionPoint.assessment_id == irl_ass.id).all()
         ap_ids = [ap.ap_id for ap in aps]
@@ -1476,7 +1507,7 @@ def get_projects(user, filt=True, active=True):
     filt_irl_data = []
 
     if user.rights == 9 and filt is True:
-        
+
         for project in irl_data:
 
             if project.project_leader_id == user.user_id:

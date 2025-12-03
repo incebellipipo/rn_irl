@@ -65,7 +65,7 @@ def get_tools_n_settings(user):
     elif user.rights == 2:
 
         return [project_tools_pg, reporting_pg, user_settings_pg]
-    
+
     elif user.rights == 6:
 
         return [user_settings_pg]
@@ -73,11 +73,11 @@ def get_tools_n_settings(user):
     elif user.rights == 7:
 
         return [user_settings_pg]
-  
+
     elif user.rights == 8:
 
         return [project_tools_pg, reporting_pg, user_settings_pg]
-  
+
     elif user.rights == 9:
 
         return [project_tools_pg,
@@ -88,6 +88,7 @@ def get_tools_n_settings(user):
                 sys_settings_pg]
 
 
+base.ensure_schema_migrations()
 owner_org_id = base.get_system_settings().owner_org_id
 
 if owner_org_id is None:

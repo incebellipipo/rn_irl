@@ -1,10 +1,24 @@
 
 base.py.bak
-base.py.bak
-*.bak
 ui.py.bak
 requirements.txt.bak
-__pycache__/base.cpython-38.pyc
-__pycache__/ui.cpython-38.pyc
-__pycache__/utils.cpython-38.pyc
+
+# Python cache artifacts
+__pycache__/
+*.py[cod]
+
+# Backup files
+*.bak
+
+# Virtual environments
+.venv/
+venv/
+.env/
+
+# Local database files
 irl.sdb
+*.sdb
+data/
+
+# Streamlit secrets (may contain environment-specific values)
+.streamlit/secrets.toml
