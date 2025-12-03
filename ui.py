@@ -225,7 +225,13 @@ def add_logo(dark_mode=True):
 
         luri = ss.system_settings.logo_uri_light
 
-    st.logo(luri, link=ss.system_settings.logo_uri)
+    if not luri:
+
+        # Skip drawing the logo until a valid URI has been configured.
+        return
+
+    link = ss.system_settings.logo_uri or None
+    st.logo(luri, link=link)
 
 
 def setup_page():
@@ -262,9 +268,9 @@ def make_action_points(prefix, project_data, ap_cb, expanded=False):
     header = "Targets and action points per %s:"
     header = header % ss.project.assessment_date
     irl_cats = ['CRL', 'TRL', 'BRL', 'IPRL', 'TMRL', 'FRL']
- 
+
     with st.form(key=f"{prefix}_ap_form", border=False):
-        
+
         st.checkbox("Show target levels in plot",
                     key=prefix + "_plot_targets")
         st.text_area("Assessment notes",
@@ -289,7 +295,7 @@ def make_action_points(prefix, project_data, ap_cb, expanded=False):
                 with at_col2:
 
                     key = f"{prefix}_{low_cat}_target_lead"
-                    lead = ss[key]                    
+                    lead = ss[key]
                     options = team.username.to_list()
                     st.selectbox("Lead:",
                                  options=options,
@@ -302,7 +308,7 @@ def make_action_points(prefix, project_data, ap_cb, expanded=False):
                     st.date_input("Due date:",
                                   key=key,
                                   format="YYYY-MM-DD")
-                    
+
                 key = f"{prefix}_{low_cat}_notes"
                 st.text_area("%s general comments:" % irl_cat,
                              key=key)
@@ -554,9 +560,9 @@ def show_action_points_table(project_data, expanded=False):
         st.subheader(text)
         st.markdown(HIDE_TABLE_ROW_INDEX, unsafe_allow_html=True)
         st.markdown(overview.
-                    style.applymap(irl_color,
-                                   subset=['Current', 'Target']).
-                    to_html(),
+                style.map(irl_color,
+                      subset=['Current', 'Target']).
+                to_html(),
                     unsafe_allow_html=True)
 
     else:
@@ -567,8 +573,8 @@ def show_action_points_table(project_data, expanded=False):
 
             st.markdown(HIDE_TABLE_ROW_INDEX, unsafe_allow_html=True)
             st.markdown(overview.
-                        style.applymap(irl_color,
-                                       subset=['Current', 'Target']).
+                        style.map(irl_color,
+                                  subset=['Current', 'Target']).
                         to_html(),
                         unsafe_allow_html=True)
 
@@ -630,10 +636,13 @@ def show_progress(project_data0, project_data1, expanded=False):
 
         st.subheader(text)
         st.markdown(HIDE_TABLE_ROW_INDEX, unsafe_allow_html=True)
-        st.markdown(progress.style.applymap(irl_color,
-                                            subset=['Previous',
-                                                    'Current']).to_html(),
-                    unsafe_allow_html=True)
+        st.markdown(
+            progress.style.map(
+                irl_color,
+                subset=['Previous', 'Current']
+            ).to_html(),
+            unsafe_allow_html=True
+        )
 
     else:
 
@@ -643,10 +652,13 @@ def show_progress(project_data0, project_data1, expanded=False):
 
             st.subheader(text)
             st.markdown(HIDE_TABLE_ROW_INDEX, unsafe_allow_html=True)
-            st.markdown(progress.style.applymap(irl_color,
-                                                subset=['Previous',
-                                                        'Current']).to_html(),
-                        unsafe_allow_html=True)
+            st.markdown(
+                progress.style.map(
+                    irl_color,
+                    subset=['Previous', 'Current']
+                ).to_html(),
+                unsafe_allow_html=True
+            )
 
 
 def add_user():
@@ -1120,7 +1132,7 @@ def irl_explainer():
 
         with crl_h:
 
-            st.header("Customer Readiness Level – CRL")
+            st.header("Customer Readiness Level - CRL")
             st.markdown("CRL focus on getting your “solution” out into the market so that it is being used and creates value.")
             st.markdown("The CRL scale is divided in two main stages:")
             st.markdown("* CRL 1-4: Understanding your customers/users.\n* CRL 5-9: Getting your “solution” in the hands of the customer/user and trying to sell it.")
@@ -1131,8 +1143,8 @@ def irl_explainer():
             crl_sdesc = crl_df[['Level', 'Description']]
             st.markdown(hide_table_row_index,
                         unsafe_allow_html=True)
-            st.markdown(crl_sdesc.style.applymap(irl_color,
-                                                 subset=['Level']).
+            st.markdown(crl_sdesc.style.map(irl_color,
+                                            subset=['Level']).
                         to_html(escape=False),
                         unsafe_allow_html=True)
 
@@ -1141,8 +1153,8 @@ def irl_explainer():
             crl_desc = crl_df[['Level', 'Aspects']]
             st.markdown(hide_table_row_index,
                         unsafe_allow_html=True)
-            st.markdown(crl_desc.style.applymap(irl_color,
-                                                subset=['Level']).
+            st.markdown(crl_desc.style.map(irl_color,
+                                           subset=['Level']).
                         to_html(escape=False),
                         unsafe_allow_html=True)
 
@@ -1153,19 +1165,19 @@ def irl_explainer():
 
         with trl_h:
 
-            st.header("Technology Readiness Level – TRL")
+            st.header("Technology Readiness Level - TRL")
             st.markdown("TRL focus on the functionality of the “technology” (se comment below) and that it is “fit for purpose”.")
             st.markdown("We are using the TRL scale originally developed by NASA with some small modifications to make it easier to understand and apply to different types of ideas. In particular, we have tried to add explanations to key words and concepts in the definitions of the levels in the scale.")
             st.markdown("We use the word “Technology” to stick to the terminology of the original TRL scale, but the word should be interpreted as the “solution” you want to develop regardless if it is strictly speaking a technology or not.")
-            st.markdown("It can sometimes be difficult to differentiate between the steps in middle part of the TRL scale – TRL 4, 5, 6, 7. Some typical differentiating factors to consider could be:\n * Size or form factor\n* Level of integration of subcomponents\n* “Finish” of the prototype – closeness to appearance of final product\n * Level of reality in the “relevant environment”\n* Development phase of the technology and/or components\n* Etc.")
+            st.markdown("It can sometimes be difficult to differentiate between the steps in middle part of the TRL scale - TRL 4, 5, 6, 7. Some typical differentiating factors to consider could be:\n * Size or form factor\n* Level of integration of subcomponents\n* “Finish” of the prototype - closeness to appearance of final product\n * Level of reality in the “relevant environment”\n* Development phase of the technology and/or components\n* Etc.")
 
         with trl_s:
 
             trl_sdesc = trl_df[['Level', 'Description']]
             st.markdown(hide_table_row_index,
                         unsafe_allow_html=True)
-            st.markdown(trl_sdesc.style.applymap(irl_color,
-                                                 subset=['Level']).
+            st.markdown(trl_sdesc.style.map(irl_color,
+                                            subset=['Level']).
                         to_html(escape=False),
                         unsafe_allow_html=True)
 
@@ -1174,8 +1186,8 @@ def irl_explainer():
             trl_desc = trl_df[['Level', 'Aspects']]
             st.markdown(hide_table_row_index,
                         unsafe_allow_html=True)
-            st.markdown(trl_desc.style.applymap(irl_color,
-                                                subset=['Level']).
+            st.markdown(trl_desc.style.map(irl_color,
+                                           subset=['Level']).
                         to_html(escape=False),
                         unsafe_allow_html=True)
 
@@ -1186,7 +1198,7 @@ def irl_explainer():
 
         with brl_h:
 
-            st.header("Business Model Readiness Level – BRL")
+            st.header("Business Model Readiness Level - BRL")
             st.markdown("BRL focus on creating a viable and sustainable business model around the idea. The business model can be commercial or non-commercial and for profit or non-profit.")
             st.markdown("In this Readiness Level, we use the following key definitions:\n* ”Business Model” = “A business model describes how an organization creates, delivers, and captures value”. This can be described in several different formats, e.g. a Business Model Canvas, but also many other ways.\n * “Sustainable Business Model” = A business model where the Revenue ≥ Cost (over time) AND Positive contribution to environment and society > Negative contribution to environment and society (over time).")
             st.markdown("We believe that going forward from now, you cannot have an economically viable business model over time without taking responsibility for your contribution to environmental and social sustainability as well.")
@@ -1198,8 +1210,8 @@ def irl_explainer():
             brl_sdesc = brl_df[['Level', 'Description']]
             st.markdown(hide_table_row_index,
                         unsafe_allow_html=True)
-            st.markdown(brl_sdesc.style.applymap(irl_color,
-                                                 subset=['Level']).
+            st.markdown(brl_sdesc.style.map(irl_color,
+                                            subset=['Level']).
                         to_html(escape=False),
                         unsafe_allow_html=True)
 
@@ -1208,8 +1220,8 @@ def irl_explainer():
             brl_desc = brl_df[['Level', 'Aspects']]
             st.markdown(hide_table_row_index,
                         unsafe_allow_html=True)
-            st.markdown(brl_desc.style.applymap(irl_color,
-                                                subset=['Level']).
+            st.markdown(brl_desc.style.map(irl_color,
+                                           subset=['Level']).
                         to_html(escape=False),
                         unsafe_allow_html=True)
 
@@ -1220,7 +1232,7 @@ def irl_explainer():
 
         with iprl_h:
 
-            st.header("IPR Readiness Level – IPRL")
+            st.header("IPR Readiness Level - IPRL")
             st.markdown("IPRL focusses on controlling and using Intellectual Property Rights to increase the likelihood of successfully taking the idea to the market and creating value.")
             st.markdown("It is very important to remember that all new ideas are based on, and contains, some sort of IPR, so IPRL is relevant for all types of ideas.")
             st.markdown("The IPRL scale is divided in two main stages:\n* IPRL 1-4: Identifying, describing, and assessing the potential to protect your IPR.\n* IPRL 5-9: Taking active steps to protect and control your IPR according to a thought through strategy.")
@@ -1231,8 +1243,8 @@ def irl_explainer():
             iprl_sdesc = iprl_df[['Level', 'Description']]
             st.markdown(hide_table_row_index,
                         unsafe_allow_html=True)
-            st.markdown(iprl_sdesc.style.applymap(irl_color,
-                                                  subset=['Level']).
+            st.markdown(iprl_sdesc.style.map(irl_color,
+                                             subset=['Level']).
                         to_html(escape=False),
                         unsafe_allow_html=True)
 
@@ -1241,8 +1253,8 @@ def irl_explainer():
             iprl_desc = iprl_df[['Level', 'Aspects']]
             st.markdown(hide_table_row_index,
                         unsafe_allow_html=True)
-            st.markdown(iprl_desc.style.applymap(irl_color,
-                                                 subset=['Level']).
+            st.markdown(iprl_desc.style.map(irl_color,
+                                            subset=['Level']).
                         to_html(escape=False),
                         unsafe_allow_html=True)
 
@@ -1253,9 +1265,9 @@ def irl_explainer():
 
         with tmrl_h:
 
-            st.header("Team Readiness Level – TMRL")
+            st.header("Team Readiness Level - TMRL")
             st.markdown("TMRL focus on getting the right people together to go from idea to market and to make sure they have the best possibilities to perform well.")
-            st.markdown("The TMRL scale primarily deals with:\n* Competencies – that there is the right knowledge, skills, experience, etc. at each stage of the idea development.\n* Capacity – that there is enough work capacity of people with the right competencies to do the work necessary at each stage of the idea development.\n* Team alignment – that the people in the team are sitting in the same boat and rowing in the same direction.")
+            st.markdown("The TMRL scale primarily deals with:\n* Competencies - that there is the right knowledge, skills, experience, etc. at each stage of the idea development.\n* Capacity - that there is enough work capacity of people with the right competencies to do the work necessary at each stage of the idea development.\n* Team alignment - that the people in the team are sitting in the same boat and rowing in the same direction.")
             st.markdown("Competencies and capacity can be added by e.g. recruitment, training, consultants, partners, etc.")
             st.markdown("The term “diversity” should be understood to encompass gender, culture, age, background, and other relevant factors. An ample body of research shows that when you are taking new ideas to the market (i.e. creating innovations), diverse teams perform better.")
             st.markdown("The TMRL scale is divided in two main stages:\n* TMRL 1-4: The initial team to verify and develop the potential of the idea.\n* TMRL 5-9: The team to build a startup/organisation to realize the idea and take it to the market, where:\n\t- TMRL 5-6: putting the founding team in place to start building the startup, and\n\t- TMRL 7-9: building and scaling the organisation.")
@@ -1267,8 +1279,8 @@ def irl_explainer():
             tmrl_sdesc = tmrl_df[['Level', 'Description']]
             st.markdown(hide_table_row_index,
                         unsafe_allow_html=True)
-            st.markdown(tmrl_sdesc.style.applymap(irl_color,
-                                                  subset=['Level']).
+            st.markdown(tmrl_sdesc.style.map(irl_color,
+                                             subset=['Level']).
                         to_html(escape=False),
                         unsafe_allow_html=True)
 
@@ -1277,8 +1289,8 @@ def irl_explainer():
             tmrl_desc = tmrl_df[['Level', 'Aspects']]
             st.markdown(hide_table_row_index,
                         unsafe_allow_html=True)
-            st.markdown(tmrl_desc.style.applymap(irl_color,
-                                                 subset=['Level']).
+            st.markdown(tmrl_desc.style.map(irl_color,
+                                            subset=['Level']).
                         to_html(escape=False),
                         unsafe_allow_html=True)
 
@@ -1289,11 +1301,11 @@ def irl_explainer():
 
         with frl_h:
 
-            st.header("Funding Readiness Level – FRL")
+            st.header("Funding Readiness Level - FRL")
             st.markdown("FRL focus on securing enough funding to develop the idea and to reach an economically viable and sustainable business model for the idea over time.")
             st.markdown("The FRL is based on two core assumptions:\n* Successful innovation (taking new ideas to the market) depends on finding a viable and sustainable business model for the idea so that it can create value and impact over time on the market.\n* New ideas always require input in the form of people’s time, money, and other resources to be developed before they can be sold or generate revenue/value in other ways, so there will always be a need for some sort of funding to cover the resource need before you reach a viable business model.")
-            st.markdown("There are many different possible sources of funding – e.g., internal funding from yourself or your organisation; external funding from investors, banks, funding agencies, etc.; customer funding from sales, pre-sales, joint development, etc.; and so on.")
-            st.markdown("The FRL scale primarily deals with:\n* What are you funding? – the idea/concept/project/business/activities you need funding for\n* How much funding do you need?\n* How much funding have you secured?")
+            st.markdown("There are many different possible sources of funding - e.g., internal funding from yourself or your organisation; external funding from investors, banks, funding agencies, etc.; customer funding from sales, pre-sales, joint development, etc.; and so on.")
+            st.markdown("The FRL scale primarily deals with:\n* What are you funding? - the idea/concept/project/business/activities you need funding for\n* How much funding do you need?\n* How much funding have you secured?")
             st.markdown("The FRL scale is divided in two main stages:\n* FRL 1-4: Primary focus on funding to verify and develop the potential of the idea so that you can identify a viable business model.\n* FRL 5-9: Primary focus on being able to realise the business model and reach economic viability and sustainability over time.")
             st.markdown("From FRL 5 and upwards there is a lot of focus on funding from external sources. In cases where external funding is not the chosen strategy, you can ignore the criteria that specifically relate to external funding (pitches for funding, discussions with investors, etc.), but still use the criteria that relate to keeping track of your funding need (budget, accounting, financial forecasting, etc.)")
 
@@ -1302,8 +1314,8 @@ def irl_explainer():
             frl_sdesc = frl_df[['Level', 'Description']]
             st.markdown(hide_table_row_index,
                         unsafe_allow_html=True)
-            st.markdown(frl_sdesc.style.applymap(irl_color,
-                                                 subset=['Level']).
+            st.markdown(frl_sdesc.style.map(irl_color,
+                                            subset=['Level']).
                         to_html(escape=False),
                         unsafe_allow_html=True)
 
@@ -1312,8 +1324,8 @@ def irl_explainer():
             frl_desc = frl_df[['Level', 'Aspects']]
             st.markdown(hide_table_row_index,
                         unsafe_allow_html=True)
-            st.markdown(frl_desc.style.applymap(irl_color,
-                                                subset=['Level']).
+            st.markdown(frl_desc.style.map(irl_color,
+                                           subset=['Level']).
                         to_html(escape=False),
                         unsafe_allow_html=True)
 
@@ -1360,7 +1372,7 @@ def add_new_project(users, handler):
                  ss.new_project_members,
                  index=None,
                  key='new_project_leader')
-    st.text_area("Project description", 
+    st.text_area("Project description",
                  key='new_project_description')
 
     if status == 2:
@@ -1636,9 +1648,9 @@ def user_settings(user_settings, handler):
 def delete_irl_ass(user):
 
     def irl_ass_labeler(obj):
-        
+
         notes = ""
-        
+
         if obj.project_notes is not None:
             notes = obj.project_notes[:42]
 
@@ -1661,7 +1673,15 @@ def delete_irl_ass(user):
 
         with ass:
 
-            irl_asses = base.get_project_history(ss.project_to_delete_from.project_no)
+            proj = ss.get("project_to_delete_from")
+
+            if proj is None:
+
+                irl_asses = []
+
+            else:
+
+                irl_asses = base.get_project_history(proj.project_no)
             st.multiselect("Select IRL assessments to delete permanently",
                            irl_asses,
                            placeholder="Select assessment(s)",

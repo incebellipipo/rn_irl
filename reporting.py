@@ -52,36 +52,60 @@ with rep:
                  options=report_engine.AVAILABLE_REPORTS.keys(),
                  key="selected_report")
 
-portfolio = report_engine.AVAILABLE_REPORTS[ss.selected_report][1]
-   
+report_handler, portfolio = report_engine.AVAILABLE_REPORTS[ss.selected_report]
+projects = ss.get("projects", []) or []
+
 with proj:
 
-    if portfolio:
-        
+    if not projects:
+
+        st.info("No projects available yet. Add a project before generating reports.")
+        ss.selected_rep_projects = []
+        ss.selected_rep_project = None
+
+    elif portfolio:
+
         st.multiselect("Select Project(s)",
-                       options=ss.projects,
+                       options=projects,
                        key="selected_rep_projects")
     else:
-        
+
         st.selectbox("Select Project",
-                     options=ss.projects,
+                     options=projects,
                      key="selected_rep_project")
+
 
 if portfolio:
 
-    with report_engine.AVAILABLE_REPORTS[ss.selected_report][0](ss.selected_rep_projects) as pdf_buffer:
-        st.download_button(
-            label="Save portfolio report to Downloads folder",
-            data=pdf_buffer,
-            file_name=f"Portfolio_report.pdf",
-            mime="application/pdf"
-        )
+    portfolio_selection = ss.get("selected_rep_projects", [])
+
+    if not portfolio_selection:
+
+        st.info("Select at least one project to generate a portfolio report.")
+
+    else:
+
+        with report_handler(portfolio_selection) as pdf_buffer:
+            st.download_button(
+                label="Save portfolio report to Downloads folder",
+                data=pdf_buffer,
+                file_name=f"Portfolio_report.pdf",
+                mime="application/pdf"
+            )
 else:
 
-    with report_engine.AVAILABLE_REPORTS[ss.selected_report][0](ss.selected_rep_project) as pdf_buffer:
-        st.download_button(
-            label="Save project report to Downloads folder",
-            data=pdf_buffer,
-            file_name=f"{ss.selected_rep_project.project_no}_{ss.selected_rep_project.project_name}_report.pdf",
-            mime="application/pdf"
-        )
+    project_selection = ss.get("selected_rep_project")
+
+    if project_selection is None:
+
+        st.info("Select a project to generate a project report.")
+
+    else:
+
+        with report_handler(project_selection) as pdf_buffer:
+            st.download_button(
+                label="Save project report to Downloads folder",
+                data=pdf_buffer,
+                file_name=f"{project_selection.project_no}_{project_selection.project_name}_report.pdf",
+                mime="application/pdf"
+            )

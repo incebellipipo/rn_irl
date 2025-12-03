@@ -41,6 +41,26 @@ rights_map = {"Read Only": 0,
               "Read/Write/Create": 2,
               "Administrator": 9}
 
+DEFAULT_PERMISSION_LEVELS = {
+    level: label for label, level in rights_map.items()
+}
+
+
+def _ensure_default_permission_levels(session):
+    """Seed the permission level table when running against a fresh DB."""
+
+    existing = session.query(func.count(PermissionLevel.level)).scalar()
+
+    if existing:
+
+        return
+
+    for level, label in sorted(DEFAULT_PERMISSION_LEVELS.items()):
+
+        session.add(PermissionLevel(level=level, level_text=label))
+
+    session.commit()
+
 
 class SerializerMixin:
     """
@@ -870,14 +890,33 @@ def get_irl_table(irl_type, ascending=False):
 
     session.close()
     engine.dispose()
-    irl_df = pd.DataFrame([item.to_dict() for item in irl_orm])
+
+    cols = ['Level',
+            'IRLType',
+            'Description',
+            'Aspects',
+            'StartupValue',
+            'LicenseValue']
+    data = [item.to_dict() for item in irl_orm]
+    irl_df = pd.DataFrame(data)
+
+    if irl_df.empty:
+
+        # Ensure callers can safely subset the expected columns even if
+        # the IRL table has not been seeded yet.
+        irl_df = pd.DataFrame(columns=cols)
+
+    else:
+
+        irl_df = irl_df.reindex(columns=cols)
 
     return irl_df
 
 
 def get_irl_license_value_matrix():
 
-    df_dict = {'Level': list(range(1, 10, 1))}
+    levels = list(range(1, 10, 1))
+    df_dict = {'Level': levels}
     irl_types = ['CRL', 'TRL', 'BRL', 'IPRL', 'TMRL', 'FRL']
     engine = create_engine(st.secrets.db_details.db_path)
     Base.metadata.create_all(bind=engine)
@@ -889,8 +928,13 @@ def get_irl_license_value_matrix():
         irl_values = session.query(IRL.LicenseValue).\
             filter(IRL.IRLType == irl_type).\
             order_by(IRL.Level).all()
-        irl_values = list(map(lambda irl_value: irl_value[0], irl_values))
-        df_dict[irl_type] = irl_values
+        irl_values = [value[0] for value in irl_values]
+
+        if len(irl_values) < len(levels):
+
+            irl_values += [None] * (len(levels) - len(irl_values))
+
+        df_dict[irl_type] = irl_values[:len(levels)]
 
     session.close()
     engine.dispose()
@@ -901,7 +945,8 @@ def get_irl_license_value_matrix():
 
 def get_irl_startup_value_matrix():
 
-    df_dict = {'Level': list(range(1, 10, 1))}
+    levels = list(range(1, 10, 1))
+    df_dict = {'Level': levels}
     irl_types = ['CRL', 'TRL', 'BRL', 'IPRL', 'TMRL', 'FRL']
     engine = create_engine(st.secrets.db_details.db_path)
     Base.metadata.create_all(bind=engine)
@@ -913,8 +958,13 @@ def get_irl_startup_value_matrix():
         irl_values = session.query(IRL.StartupValue).\
             filter(IRL.IRLType == irl_type).\
             order_by(IRL.Level).all()
-        irl_values = list(map(lambda irl_value: irl_value[0], irl_values))
-        df_dict[irl_type] = irl_values
+        irl_values = [value[0] for value in irl_values]
+
+        if len(irl_values) < len(levels):
+
+            irl_values += [None] * (len(levels) - len(irl_values))
+
+        df_dict[irl_type] = irl_values[:len(levels)]
 
     session.close()
     engine.dispose()
@@ -1411,6 +1461,26 @@ def get_system_settings():
     session = Session()
     sys_settings = session.query(
         SystemSettings).filter(SystemSettings.id == 1).first()
+
+    if sys_settings is None:
+
+        sys_settings = SystemSettings(
+            id=1,
+            logo_uri='',
+            logo_uri_dark='',
+            logo_uri_light='',
+            force_email_users=0,
+            owner_org_id=None,
+            show_valuations=0,
+            noreply_address='',
+            noreply_body='',
+            irl_revision='',
+            forward_ass_comments=0)
+        session.add(sys_settings)
+        session.commit()
+
+        # Make sure we return the managed instance with any defaults set by DB.
+        session.refresh(sys_settings)
     session.close()
     engine.dispose()
 
@@ -1777,6 +1847,8 @@ def get_permission_levels(user=None):
     Base.metadata.create_all(bind=engine)
     Session = sessionmaker(bind=engine)
     session = Session()
+
+    _ensure_default_permission_levels(session)
 
     if user is None:
 
