@@ -19,6 +19,19 @@ services:
       timeout: 5s
       retries: 5
 
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: rn_irl_nginx
+    depends_on:
+      - rn_irl
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./certificate:/etc/nginx/certs:ro
+    restart: unless-stopped
+
   sqlite3:
     image: alpine:3.20
     container_name: rn_irl_sqlite3
